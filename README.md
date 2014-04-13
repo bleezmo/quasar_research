@@ -1,2 +1,0 @@
-quasar_research
-===============
