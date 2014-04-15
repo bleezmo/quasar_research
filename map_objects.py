@@ -1,7 +1,7 @@
 class MapObject:
 	def __init__(self,z):
 		self.z = z
-	def colorPoint(self,x,y,default):
+	def drawPoint(self,x,y,default):
 		return default
 
 class ImageMap(MapObject):
@@ -16,19 +16,20 @@ class ImageMap(MapObject):
 		self.img_array = img_array
 	def getImageArray(self):
 		return self.img_array
-	def colorPoint(self,x,y,default):
+	def drawPoint(self,x,y,default):
 		if(len(self.img_array) > x and len(self.img_array[x]) > y):
 			return self.img_array[x][y]
 		else:
 			return default
 
-E_CONSTANT = 2.718281828
 class Disk(MapObject):
 	def __init__(self,center,radius,z=1):
 		MapObject.__init__(self,z)
 		self.centerx = center[0]
 		self.centery = center[1]
 		self.radius = radius
+		self.intensity_mappings = []
+		self.computeWavelengths()
 
 	#check to make sure that the given point falls on the circle
 	def checkCoord(self,x,y):
@@ -42,8 +43,13 @@ class Disk(MapObject):
 		color_multiplier = E_CONSTANT**(-(xcomponent+ycomponent))
 		return color_multiplier
 
-	def calculateColor(self):
-		#color_multiplier = self.calculateGaussian(x,y)
+	def computeWavelengths(self):
+		for r in range(self.radius):
+			wavelength_max = (B_CONSTANT * (r**(3/4))) / A_CONSTANT
+			self.intensity_mappings.append(InstensityMapping(wavelength_max,self.radius))
+
+	def calculateColor(self,x,y):
+		color_multiplier = self.calculateGaussian(x,y)
 		# max = 255*255*255
 		# rfilter = 255<<16
 		# bfilter = 255
@@ -52,10 +58,11 @@ class Disk(MapObject):
 		# rcomp = (rfilter & int_color)>>16
 		# gcomp = (gfilter & int_color)>>8
 		# bcomp = bfilter & int_color
-		return "#%02x%02x%02x" % (255,0,0)
+		return "#%02x%02x%02x" % (color_multiplier*255,color_multiplier*255,color_multiplier*255)
 
-	def colorPoint(self,x,y,default):
+	def drawPoint(self,x,y,default):
 		if(self.checkCoord(x,y)):
-			return self.calculateColor()
+
+			return self.calculateColor(x,y)
 		else:
 			return default

@@ -55,7 +55,7 @@ def generateCanvasArray(width,height,*objects):
 		for y in range(height):
 			pixelColor = "#%02x%02x%02x" % (255,255,255)
 			for o in sorted_objects:
-				pixelColor = o.colorPoint(x,y,pixelColor)
+				pixelColor = o.drawPoint(x,y,pixelColor)
 			col_array.append(pixelColor)
 		image_array.append(col_array)
 	return image_array
@@ -76,7 +76,7 @@ def draw(filepath):
 	#get objects
 	magMap = map_objects.ImageMap(IMAGE_WIDTH,IMAGE_HEIGHT)
 	generateMagMap(IMAGE_WIDTH,IMAGE_HEIGHT,largest,image,magMap)
-	disk = map_objects.Disk([150,150],30)
+	disk = map_objects.Disk([250,250],100)
 
 	master = Tk()
 	master.wm_title(filepath)
