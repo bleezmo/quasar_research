@@ -1,3 +1,10 @@
+from imp import reload
+import wavelength_mapping
+from generic_objects import Circle
+
+reload(wavelength_mapping)
+WavelengthMapping = wavelength_mapping.WavelengthMapping
+
 class MapObject:
 	def __init__(self,z):
 		self.z = z
@@ -28,41 +35,22 @@ class Disk(MapObject):
 		self.centerx = center[0]
 		self.centery = center[1]
 		self.radius = radius
-		self.intensity_mappings = []
-		self.computeWavelengths()
-
-	#check to make sure that the given point falls on the circle
-	def checkCoord(self,x,y):
-		rhs = self.radius * self.radius
-		lhs = ((x - self.centerx)**2)+((y - self.centery)**2)
-		return lhs <= rhs
-
-	def calculateGaussian(self,x,y):
-		xcomponent = ((x - self.centerx)**2)/(2*self.radius**2)
-		ycomponent = ((y - self.centery)**2)/(2*self.radius**2)
-		color_multiplier = E_CONSTANT**(-(xcomponent+ycomponent))
-		return color_multiplier
 
 	def computeWavelengths(self):
-		for r in range(self.radius):
-			wavelength_max = (B_CONSTANT * (r**(3/4))) / A_CONSTANT
-			self.intensity_mappings.append(InstensityMapping(wavelength_max,self.radius))
+		c = Circle([self.centerx,self.centery],self.radius)
+		self.wavelengths = []
+		for r in range(1,self.radius+1):
+			self.wavelengths.append(WavelengthMapping(r,c))
 
-	def calculateColor(self,x,y):
-		color_multiplier = self.calculateGaussian(x,y)
-		# max = 255*255*255
-		# rfilter = 255<<16
-		# bfilter = 255
-		# gfilter = 255<<8
-		# int_color = int(max * color_multiplier)
-		# rcomp = (rfilter & int_color)>>16
-		# gcomp = (gfilter & int_color)>>8
-		# bcomp = bfilter & int_color
-		return "#%02x%02x%02x" % (color_multiplier*255,color_multiplier*255,color_multiplier*255)
+	def applyMagnification(self,mag_array):
+		for w in self.wavelengths:
+			w.applyMagnification(mag_array)
 
 	def drawPoint(self,x,y,default):
-		if(self.checkCoord(x,y)):
-
-			return self.calculateColor(x,y)
+		rhs = self.radius * self.radius
+		lhs = ((x - self.centerx)**2)+((y - self.centery)**2)
+		#check to see if point is on circle
+		if(lhs == rhs):
+			return "#%02x%02x%02x" % (255,0,0)
 		else:
 			return default
