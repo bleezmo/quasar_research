@@ -2,13 +2,8 @@ from tkinter import *
 import imp
 import interpolater
 import map_objects
-# Numpy is a library for handling arrays (like data points)
-import numpy as np
-# Pyplot is a module within the matplotlib library for plotting
-import matplotlib.pyplot as plt
 
-imp.reload(interpolater)
-imp.reload(map_objects)
+from pylab import *
 
 CANVAS_WIDTH = 500
 CANVAS_HEIGHT = 500
@@ -86,32 +81,85 @@ def draw(name,array_size,*objects):
 	drawMap(win,interpolated_array,CANVAS_WIDTH,CANVAS_HEIGHT)
 	master.mainloop()
 
-def main():
+def reloadModules():
+	imp.reload(interpolater)
+	imp.reload(map_objects)
+
+def start():
+	reloadModules()
 	#get image from file
 	file = open("image_a_0.dat")
 	header = Header(file)
-	mag_array = MagnificationArray(file,header)
+	mag_arraya = MagnificationArray(file,header)
+	file.close()
+	file = open("image_b_0.dat")
+	header = Header(file)
+	mag_arrayb = MagnificationArray(file,header)
 	file.close()
 
 	#get objects
-	disk = map_objects.Disk([250,250],100)
+	diska = map_objects.Disk([250,250],100)
 	print("computing wavelengths in disk")
-	disk.computeWavelengths()
+	diska.computeWavelengths(1)
 	print("applying magnification to wavelengths")
-	disk.applyMagnification(mag_array.array)
+	diska.applyMagnification(mag_arraya.array)
+
+	diskb = map_objects.Disk([250,250],100)
+	print("computing wavelengths in disk")
+	diskb.computeWavelengths(1)
+	print("applying magnification to wavelengths")
+	diskb.applyMagnification(mag_arrayb.array)
+
+	plot([w.wavelength for w in diska.wavelengths],\
+		[w.total_magnification for w in diska.wavelengths],\
+		'bo')
+
+	plot([w.wavelength for w in diskb.wavelengths],\
+		[w.total_magnification for w in diskb.wavelengths],\
+		'ro')
+
+	# Set x limits
+	xlim(0,int(disk.wavelengths[-1:][0].wavelength)+10)
+
+	show()
 
 	# draw("image_a_0.dat",[header.IMAGE_WIDTH,header.IMAGE_HEIGHT], generateMagMap(header.IMAGE_WIDTH,header.IMAGE_HEIGHT,mag_array), disk)
 
-	# Create an array of 100 linearly-spaced points from 0 to 2*pi
-	x = np.linspace(0,2*np.pi,100)
-	y = np.sin(x)
+def graph_tut():
 
-	# Create the plot
-	plt.plot(x,y)
+	# Create a new figure of size 8x6 points, using 80 dots per inch
+	figure(figsize=(8,6), dpi=80)
 
-	# Save the figure in a separate file
-	plt.savefig('sine_function_plain.png')
+	# Create a new subplot from a grid of 1x1
+	subplot(1,1,1)
 
-	# Draw the plot to the screen
-	plt.show()
-main()
+	X = np.linspace(-np.pi, np.pi, 256,endpoint=True)
+	C,S = np.cos(X), np.sin(X)
+
+	print(C[0])
+
+	# Plot cosine using blue color with a continuous line of width 1 (pixels)
+	plot(X, C, color="blue", linewidth=1.0, linestyle="-")
+
+	# Plot sine using green color with a continuous line of width 1 (pixels)
+	plot(X, S, color="green", linewidth=1.0, linestyle="-")
+
+	# Set x limits
+	xlim(-4.0,4.0)
+
+	# Set x ticks
+	xticks(np.linspace(-4,4,9,endpoint=True))
+
+	# Set y limits
+	ylim(-1.0,1.0)
+
+	# Set y ticks
+	yticks(np.linspace(-1,1,5,endpoint=True))
+
+	# Save figure using 72 dots per inch
+	# savefig("exercice_2.png",dpi=72)
+
+	# Show result on screen
+	show()
+
+start()

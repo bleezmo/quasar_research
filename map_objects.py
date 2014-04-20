@@ -36,10 +36,10 @@ class Disk(MapObject):
 		self.centery = center[1]
 		self.radius = radius
 
-	def computeWavelengths(self):
+	def computeWavelengths(self,step):
 		c = Circle([self.centerx,self.centery],self.radius)
 		self.wavelengths = []
-		for r in range(1,self.radius+1):
+		for r in range(step,self.radius+1,step):
 			self.wavelengths.append(WavelengthMapping(r,c))
 
 	def applyMagnification(self,mag_array):
