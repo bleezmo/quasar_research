@@ -119,7 +119,7 @@ def start():
 		'ro')
 
 	# Set x limits
-	xlim(0,int(disk.wavelengths[-1:][0].wavelength)+10)
+	#xlim(0,int(disk.wavelengths[-1:][0].wavelength)+10)
 
 	show()
 

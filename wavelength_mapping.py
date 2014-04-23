@@ -11,7 +11,7 @@ class WavelengthMapping:
 		self.centerx = disk.center[0]
 		self.centery = disk.center[1]
 		self.wavelength = (B_CONSTANT * (radius_peak**(3/4))) / A_CONSTANT
-		self.computeIntensityPoints()
+		self.computeAndNormalizeIntensityPoints()
 
 	def calculateGaussian(self,x,y):
 		xcomponent = ((x-self.centerx)**2)/(2*self.radius_peak**2)
@@ -20,10 +20,13 @@ class WavelengthMapping:
 		return multiplier
 
 	#compute the intensity based on the gaussian.
-	def computeIntensityPoints(self):
+	def computeAndNormalizeIntensityPoints(self):
 		self.intensity_points = []
+		self.total_intensity = 0
 		def computeIntensityPoint(x,y):
-			ip = Point(x,y,self.calculateGaussian(x,y))
+			g = self.calculateGaussian(x,y)
+			ip = Point(x,y,g)
+			self.total_intensity = self.total_intensity + g
 			return ip
 		for x in range(self.max_radius):
 			for y in range(self.max_radius):
@@ -31,6 +34,8 @@ class WavelengthMapping:
 				self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery+y))
 				self.intensity_points.append(computeIntensityPoint(self.centerx+x,self.centery-y))
 				self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery-y))
+		for pt in self.intensity_points:
+			pt.value = pt.value / self.total_intensity
 
 	def checkCoord(self,x,y):
 		rhs = self.radius * self.radius
