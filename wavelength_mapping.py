@@ -5,8 +5,6 @@ MBH = 1000000000
 EDDINGTON_RATIO = 0.1
 #euler's constant
 E_CONSTANT = 2.718281828
-#wein's displacement constant
-B_CONSTANT = .002898
 #part of wavelength formula T(r)=A*r^(-3/4)
 A_CONSTANT = ((3.940881993343145/(10**24))*(MBH**2)*EDDINGTON_RATIO)**0.25
 
