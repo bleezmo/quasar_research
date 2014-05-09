@@ -110,11 +110,11 @@ def start():
 	print("applying magnification to wavelengths")
 	diskb.applyMagnification(mag_arrayb.array)
 
-	plot([w.wavelength*1000000000 for w in diska.wavelengths],\
+	plot([w.wavelength for w in diska.wavelengths],\
 		[w.total_magnification for w in diska.wavelengths],\
 		'bo')
 
-	plot([w.wavelength*1000000000 for w in diskb.wavelengths],\
+	plot([w.wavelength for w in diskb.wavelengths],\
 		[w.total_magnification for w in diskb.wavelengths],\
 		'ro')
 

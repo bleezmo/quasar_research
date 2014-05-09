@@ -1,12 +1,31 @@
 from generic_objects import *
+from math import pi
 
-#mass of black hole
-MBH = 1000000000
+#mass of black hole (kg)
+MBH = 1.989*(10**39)
+#ratio of emitted light over max emitting light
 EDDINGTON_RATIO = 0.1
+#wein's displacement constant (m*K)
+B_CONSTANT = 2.898/(10**3)
 #euler's constant
 E_CONSTANT = 2.718281828
-#part of wavelength formula T(r)=A*r^(-3/4)
-A_CONSTANT = ((3.940881993343145/(10**24))*(MBH**2)*EDDINGTON_RATIO)**0.25
+#mass of proton (kg)
+PROTON_MASS = 1.673/(10**27) 
+#speed of light (m/s)
+C_CONSTANT = 3*(10**8)
+#thomson scattering cross section (m^2)
+SIGMAT = 6.65/(10**29)
+#gravitational constant
+G_CONSTANT = 6.67/(10**11)
+#stefan-boltzmann constant
+SB_CONSTANT = 5.67/(10**8)
+#mass accretion rate through an annulus of disk
+MDOT = (48*G_CONSTANT*MBH*PROTON_MASS*pi*EDDINGTON_RATIO)/(C_CONSTANT*SIGMAT)
+#part of temperature profile of accretion disk T(r)=A*r^(-3/4)
+A_CONSTANT = ((G_CONSTANT*MBH*MDOT)/(8*pi*SB_CONSTANT))**.25
+#part of wavelength formula wavelength = (B_CONSTANT/A_CONSTANT)*r^(-3/4)
+BA_CONSTANT = B_CONSTANT/A_CONSTANT
+
 
 class WavelengthMapping:
 	def __init__(self,radius_peak,disk):
@@ -14,7 +33,7 @@ class WavelengthMapping:
 		self.max_radius = disk.radius
 		self.centerx = disk.center[0]
 		self.centery = disk.center[1]
-		self.wavelength = (B_CONSTANT * (radius_peak**(3/4))) / A_CONSTANT
+		self.wavelength = BA_CONSTANT * (radius_peak**(3/4))
 		self.computeAndNormalizeIntensityPoints()
 
 	def calculateGaussian(self,x,y):
