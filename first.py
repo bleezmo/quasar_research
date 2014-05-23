@@ -15,6 +15,7 @@ class Header:
 		self.IMAGE_WIDTH = int(array_size[0])
 		self.IMAGE_HEIGHT = int(array_size[1])
 		self.quasar_size = file.readline()[:-1]
+		self.quasar_size = int(''.join([c for c in self.quasar_size if c in '1234567890']))
 		self.kappa_gamma = file.readline()[:-1]
 
 
@@ -90,6 +91,7 @@ def start():
 	#get image from file
 	file = open("image_a_0.dat")
 	header = Header(file)
+	pixel_size = (header.quasar_size * 1.85 * (10**15))/header.IMAGE_WIDTH 
 	mag_arraya = MagnificationArray(file,header)
 	file.close()
 	file = open("image_b_0.dat")
@@ -98,23 +100,23 @@ def start():
 	file.close()
 
 	#get objects
-	diska = map_objects.Disk([250,250],100)
+	diska = map_objects.Disk([250,250],100,pixel_size)
 	print("computing wavelengths in disk")
 	diska.computeWavelengths(1)
 	print("applying magnification to wavelengths")
 	diska.applyMagnification(mag_arraya.array)
 
-	diskb = map_objects.Disk([250,250],100)
+	diskb = map_objects.Disk([250,250],100,pixel_size)
 	print("computing wavelengths in disk")
 	diskb.computeWavelengths(1)
 	print("applying magnification to wavelengths")
 	diskb.applyMagnification(mag_arrayb.array)
 
-	plot([w.wavelength for w in diska.wavelengths],\
+	plot([w.wavelength*(1000000000) for w in diska.wavelengths],\
 		[w.total_magnification for w in diska.wavelengths],\
 		'bo')
 
-	plot([w.wavelength for w in diskb.wavelengths],\
+	plot([w.wavelength*(1000000000) for w in diskb.wavelengths],\
 		[w.total_magnification for w in diskb.wavelengths],\
 		'ro')
 

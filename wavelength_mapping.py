@@ -28,12 +28,17 @@ BA_CONSTANT = B_CONSTANT/A_CONSTANT
 
 
 class WavelengthMapping:
-	def __init__(self,radius_peak,disk):
+	def __init__(self,radius_peak,disk,pixel_size):
+		"""
+			radius_peak the particular annulus we are calculating the wavelength for
+			disk has a bunch of stuff we need
+		"""
 		self.radius_peak = radius_peak
 		self.max_radius = disk.radius
 		self.centerx = disk.center[0]
 		self.centery = disk.center[1]
-		self.wavelength = BA_CONSTANT * (radius_peak**(3/4))
+		self.radius_peak_meters = self.radius_peak*pixel_size
+		self.wavelength = BA_CONSTANT * (self.radius_peak_meters**(3/4))
 		self.computeAndNormalizeIntensityPoints()
 
 	def calculateGaussian(self,x,y):

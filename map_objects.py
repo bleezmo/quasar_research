@@ -30,17 +30,22 @@ class ImageMap(MapObject):
 			return default
 
 class Disk(MapObject):
-	def __init__(self,center,radius,z=1):
+	def __init__(self,center,radius,pixel_size,z=1):
+		"""
+			center and radius is in pixels
+			pixel_size is number of meters that each pixel represents
+		"""
 		MapObject.__init__(self,z)
 		self.centerx = center[0]
 		self.centery = center[1]
 		self.radius = radius
+		self.pixel_size = pixel_size
 
 	def computeWavelengths(self,step):
 		c = Circle([self.centerx,self.centery],self.radius)
 		self.wavelengths = []
 		for r in range(step,self.radius+1,step):
-			self.wavelengths.append(WavelengthMapping(r,c))
+			self.wavelengths.append(WavelengthMapping(r,c,self.pixel_size))
 
 	def applyMagnification(self,mag_array):
 		for w in self.wavelengths:
