@@ -23,12 +23,11 @@ SB_CONSTANT = 5.67/(10**8)
 MDOT = (48*G_CONSTANT*MBH*PROTON_MASS*pi*EDDINGTON_RATIO)/(C_CONSTANT*SIGMAT)
 #part of temperature profile of accretion disk T(r)=A*r^(-3/4)
 A_CONSTANT = ((G_CONSTANT*MBH*MDOT)/(8*pi*SB_CONSTANT))**.25
-#part of wavelength formula wavelength = (B_CONSTANT/A_CONSTANT)*r^(-3/4)
+#part of wavelength formula wavelength = (B_CONSTANT/A_CONSTANT)*r^(3/4)
 BA_CONSTANT = B_CONSTANT/A_CONSTANT
 
-
 class WavelengthMapping:
-	def __init__(self,radius_peak,disk,pixel_size):
+	def __init__(self,radius_peak,disk,pixel_size,wavelength = -1):
 		"""
 			radius_peak the particular annulus we are calculating the wavelength for
 			disk has a bunch of stuff we need
@@ -38,7 +37,11 @@ class WavelengthMapping:
 		self.centerx = disk.center[0]
 		self.centery = disk.center[1]
 		self.radius_peak_meters = self.radius_peak*pixel_size
-		self.wavelength = BA_CONSTANT * (self.radius_peak_meters**(3/4))
+		#calculate the wavelength in nanometers
+		if(wavelength == -1):
+			self.wavelength = (BA_CONSTANT * (self.radius_peak_meters**(3/4)))*1000000000
+		else:
+			self.wavelength = wavelength
 		self.computeAndNormalizeIntensityPoints()
 
 	def calculateGaussian(self,x,y):
@@ -81,5 +84,9 @@ class WavelengthMapping:
 			self.mag_points.append(mag_point)
 			self.total_magnification = self.total_magnification + mag_point.value
 
+class RadiusMapping(WavelengthMapping):
+	def __init__(self,wavelength,disk,pixel_size):
+		radius_peak = ((A_CONSTANT*(wavelength/1000000000))/B_CONSTANT)**(4/3)
+		WavelengthMapping.__init__(self,radius_peak,disk,pixel_size,wavelength)
 
 

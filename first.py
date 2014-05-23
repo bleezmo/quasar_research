@@ -86,8 +86,9 @@ def reloadModules():
 	imp.reload(interpolater)
 	imp.reload(map_objects)
 
-def start():
+def start(red_shift,wavelengths):
 	reloadModules()
+	wavelengths = [w/(red_shift+1) for w in wavelengths]
 	#get image from file
 	file = open("image_a_0.dat")
 	header = Header(file)
@@ -102,23 +103,29 @@ def start():
 	#get objects
 	diska = map_objects.Disk([250,250],100,pixel_size)
 	print("computing wavelengths in disk")
-	diska.computeWavelengths(1)
+	diska.computeWavelengths(wavelengths)
 	print("applying magnification to wavelengths")
 	diska.applyMagnification(mag_arraya.array)
 
 	diskb = map_objects.Disk([250,250],100,pixel_size)
 	print("computing wavelengths in disk")
-	diskb.computeWavelengths(1)
+	diskb.computeWavelengths(wavelengths)
 	print("applying magnification to wavelengths")
 	diskb.applyMagnification(mag_arrayb.array)
 
-	plot([w.wavelength*(1000000000) for w in diska.wavelengths],\
+	plot([w.wavelength for w in diska.wavelengths],\
 		[w.total_magnification for w in diska.wavelengths],\
 		'bo')
 
-	plot([w.wavelength*(1000000000) for w in diskb.wavelengths],\
+	plot([w.wavelength for w in diskb.wavelengths],\
 		[w.total_magnification for w in diskb.wavelengths],\
 		'ro')
+
+	# mag_ratios = []
+	# for i in range(len(diska.wavelengths)):
+	# 	mag_ratios.append(diska.wavelengths[i].total_magnification/diskb.wavelengths[i].total_magnification)
+
+	# plot([w.wavelength for w in diska.wavelengths],mag_ratios,'go')
 
 	# Set x limits
 	#xlim(0,int(disk.wavelengths[-1:][0].wavelength)+10)
@@ -164,4 +171,4 @@ def graph_tut():
 	# Show result on screen
 	show()
 
-start()
+start(1,[450])

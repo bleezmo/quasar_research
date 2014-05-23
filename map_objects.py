@@ -4,6 +4,7 @@ from generic_objects import Circle
 
 reload(wavelength_mapping)
 WavelengthMapping = wavelength_mapping.WavelengthMapping
+RadiusMapping = wavelength_mapping.RadiusMapping
 
 class MapObject:
 	def __init__(self,z):
@@ -41,11 +42,17 @@ class Disk(MapObject):
 		self.radius = radius
 		self.pixel_size = pixel_size
 
-	def computeWavelengths(self,step):
+	def computeAllWavelengths(self,step):
 		c = Circle([self.centerx,self.centery],self.radius)
 		self.wavelengths = []
 		for r in range(step,self.radius+1,step):
 			self.wavelengths.append(WavelengthMapping(r,c,self.pixel_size))
+
+	def computeWavelengths(self,wavelengths):
+		c = Circle([self.centerx,self.centery],self.radius)
+		self.wavelengths = []
+		for w in wavelengths:
+			self.wavelengths.append(RadiusMapping(w,c,self.pixel_size))
 
 	def applyMagnification(self,mag_array):
 		for w in self.wavelengths:
