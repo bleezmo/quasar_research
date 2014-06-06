@@ -11,11 +11,10 @@ CANVAS_HEIGHT = 500
 class Header:
 	def __init__(self,file):
 		self.mag_avg = file.readline()[:-1]
-		array_size = file.readline()[:-1][1:].split(" ")
-		self.IMAGE_WIDTH = int(array_size[0])
-		self.IMAGE_HEIGHT = int(array_size[1])
-		self.quasar_size = file.readline()[:-1]
-		self.quasar_size = int(''.join([c for c in self.quasar_size if c in '1234567890']))
+		array_size = file.readline()[:-1]
+		self.IMAGE_WIDTH = int(array_size)
+		self.IMAGE_HEIGHT = int(array_size)
+		self.quasar_size = int(file.readline()[:-1])
 		self.kappa_gamma = file.readline()[:-1]
 
 
@@ -29,13 +28,14 @@ class MagnificationArray:
 		for row in range(header.IMAGE_HEIGHT):
 			column = []
 			for col in range(header.IMAGE_WIDTH):
-				pixel = int(file.readline()[:-1])
+				pixel = int(file.read(4))
 				if(largest < pixel):
 					largest = pixel
 				column.append(pixel)
 			image_array.append(column)
 		self.array = image_array
 		self.largest = largest
+	
 
 def generateMagMap(width,height,mag_array):
 	print("generating normalized magnification image map")

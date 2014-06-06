@@ -31,6 +31,7 @@ class WavelengthMapping:
 		"""
 			radius_peak the particular annulus we are calculating the wavelength for
 			disk has a bunch of stuff we need
+			wavelength is stored in nanometers
 		"""
 		self.radius_peak = radius_peak
 		self.max_radius = disk.radius
@@ -85,6 +86,9 @@ class WavelengthMapping:
 			self.total_magnification = self.total_magnification + mag_point.value
 
 class RadiusMapping(WavelengthMapping):
+	"""
+	here we assume that the given wavelength is given in nanometers
+	"""
 	def __init__(self,wavelength,disk,pixel_size):
 		radius_peak = ((A_CONSTANT*(wavelength/1000000000))/B_CONSTANT)**(4/3)
 		WavelengthMapping.__init__(self,radius_peak,disk,pixel_size,wavelength)
