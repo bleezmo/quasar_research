@@ -27,23 +27,28 @@ A_CONSTANT = ((G_CONSTANT*MBH*MDOT)/(8*pi*SB_CONSTANT))**.25
 BA_CONSTANT = B_CONSTANT/A_CONSTANT
 
 class WavelengthMapping:
-	def __init__(self,radius_peak,disk,pixel_size,wavelength = -1):
+	def __init__(self,radius_peak,disk,pixel_size,wavelength = -1,annulus_removed = None,smooth_step = 1):
 		"""
 			radius_peak the particular annulus we are calculating the wavelength for
 			disk has a bunch of stuff we need
 			wavelength is stored in nanometers
+			annulus_removed - percentage (between 0 and 1) of radius_peak to remove from calculation
 		"""
 		self.radius_peak = radius_peak
 		self.max_radius = disk.radius
 		self.centerx = disk.center[0]
 		self.centery = disk.center[1]
 		self.radius_peak_meters = self.radius_peak*pixel_size
+		if annulus_removed != None and self.radius_peak == annulus_removed[0]:
+			self.width_removed = self.radius_peak*annulus_removed
+		else:
+			self.width_removed = 0
 		#calculate the wavelength in nanometers
 		if(wavelength == -1):
 			self.wavelength = (BA_CONSTANT * (self.radius_peak_meters**(3/4)))*1000000000
 		else:
 			self.wavelength = wavelength
-		self.computeAndNormalizeIntensityPoints()
+		self.computeAndNormalizeIntensityPoints(smooth_step)
 
 	def calculateGaussian(self,x,y):
 		xcomponent = ((x-self.centerx)**2)/(2*self.radius_peak**2)
@@ -52,7 +57,7 @@ class WavelengthMapping:
 		return multiplier
 
 	#compute the intensity based on the gaussian.
-	def computeAndNormalizeIntensityPoints(self):
+	def computeAndNormalizeIntensityPoints(self,smooth_step):
 		self.intensity_points = []
 		self.total_intensity = 0
 		def computeIntensityPoint(x,y):
@@ -60,12 +65,18 @@ class WavelengthMapping:
 			ip = Point(x,y,g)
 			self.total_intensity = self.total_intensity + g
 			return ip
-		for x in range(self.max_radius):
-			for y in range(self.max_radius):
-				self.intensity_points.append(computeIntensityPoint(self.centerx+x,self.centery+y))
-				self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery+y))
-				self.intensity_points.append(computeIntensityPoint(self.centerx+x,self.centery-y))
-				self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery-y))
+		for x in range(smooth_step,self.max_radius+smooth_step,smooth_step):
+			for y in range(smooth_step,self.max_radius+smooth_step,smooth_step):
+				radius = ((x**2)+(y**2))**.5
+				isInsideDisk = radius <= self.max_radius
+				isInRemovedAnnulus = (self.width_removed > 0) and \
+									(radius >= (self.radius_peak - (self.width_removed/2))) and \
+									(radius <= (self.radius_peak + (self.width_removed/2)))
+				if(isInsideDisk and not isInRemovedAnnulus):
+					self.intensity_points.append(computeIntensityPoint(self.centerx+x,self.centery+y))
+					self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery+y))
+					self.intensity_points.append(computeIntensityPoint(self.centerx+x,self.centery-y))
+					self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery-y))
 		for pt in self.intensity_points:
 			pt.value = pt.value / self.total_intensity
 
@@ -89,8 +100,8 @@ class RadiusMapping(WavelengthMapping):
 	"""
 	here we assume that the given wavelength is given in nanometers
 	"""
-	def __init__(self,wavelength,disk,pixel_size):
-		radius_peak = ((A_CONSTANT*(wavelength/1000000000))/B_CONSTANT)**(4/3)
-		WavelengthMapping.__init__(self,radius_peak,disk,pixel_size,wavelength)
+	def __init__(self,wavelength,disk,pixel_size,smooth_step = 1,annulus_removed = None):
+		radius_peak = (((A_CONSTANT*(wavelength/1000000000))/B_CONSTANT)**(4/3))/pixel_size
+		WavelengthMapping.__init__(self,radius_peak,disk,pixel_size,wavelength,smooth_step = smooth_step,annulus_removed = annulus_removed)
 
 

@@ -42,17 +42,17 @@ class Disk(MapObject):
 		self.radius = radius
 		self.pixel_size = pixel_size
 
-	def computeAllWavelengths(self,step):
+	def computeAllWavelengths(self,step=1,annulus_removed=None):
 		c = Circle([self.centerx,self.centery],self.radius)
 		self.wavelengths = []
-		for r in range(step,self.radius+1,step):
-			self.wavelengths.append(WavelengthMapping(r,c,self.pixel_size))
+		for r in range(step,self.radius+step,step):
+			self.wavelengths.append(WavelengthMapping(r,c,self.pixel_size,annulus_removed = annulus_removed,smooth_step = step))
 
-	def computeWavelengths(self,wavelengths):
+	def computeWavelengths(self,wavelengths,smooth_step = 1,annulus_removed = None):
 		c = Circle([self.centerx,self.centery],self.radius)
 		self.wavelengths = []
 		for w in wavelengths:
-			self.wavelengths.append(RadiusMapping(w,c,self.pixel_size))
+			self.wavelengths.append(RadiusMapping(w,c,self.pixel_size,smooth_step = smooth_step, annulus_removed = annulus_removed))
 
 	def applyMagnification(self,mag_array):
 		for w in self.wavelengths:
