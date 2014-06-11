@@ -39,10 +39,12 @@ class WavelengthMapping:
 		self.centerx = disk.center[0]
 		self.centery = disk.center[1]
 		self.radius_peak_meters = self.radius_peak*pixel_size
-		if annulus_removed != None and self.radius_peak == annulus_removed[0]:
-			self.width_removed = self.radius_peak*annulus_removed
+		if annulus_removed != None:
+			annulus = (((A_CONSTANT*(annulus_removed[0]/1000000000))/B_CONSTANT)**(4/3))/pixel_size
+			width = annulus*annulus_removed[1]
+			self.width_removed = (annulus-(width/2),annulus+(width/2))
 		else:
-			self.width_removed = 0
+			self.width_removed = None
 		#calculate the wavelength in nanometers
 		if(wavelength == -1):
 			self.wavelength = (BA_CONSTANT * (self.radius_peak_meters**(3/4)))*1000000000
@@ -69,21 +71,21 @@ class WavelengthMapping:
 			for y in range(smooth_step,self.max_radius+smooth_step,smooth_step):
 				radius = ((x**2)+(y**2))**.5
 				isInsideDisk = radius <= self.max_radius
-				isInRemovedAnnulus = (self.width_removed > 0) and \
-									(radius >= (self.radius_peak - (self.width_removed/2))) and \
-									(radius <= (self.radius_peak + (self.width_removed/2)))
-				if(isInsideDisk and not isInRemovedAnnulus):
+				inRemovedAnnulus = (self.width_removed != None) and \
+									(radius >= self.width_removed[0]) and \
+									(radius <= self.width_removed[1])
+				if(isInsideDisk and not inRemovedAnnulus):
 					self.intensity_points.append(computeIntensityPoint(self.centerx+x,self.centery+y))
 					self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery+y))
 					self.intensity_points.append(computeIntensityPoint(self.centerx+x,self.centery-y))
 					self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery-y))
+				elif(isInsideDisk):
+					self.intensity_points.append(Point(self.centerx+x,self.centery+y,0))
+					self.intensity_points.append(Point(self.centerx-x,self.centery+y,0))
+					self.intensity_points.append(Point(self.centerx+x,self.centery-y,0))
+					self.intensity_points.append(Point(self.centerx-x,self.centery-y,0))
 		for pt in self.intensity_points:
 			pt.value = pt.value / self.total_intensity
-
-	def checkCoord(self,x,y):
-		rhs = self.radius * self.radius
-		lhs = ((x - self.centerx)**2)+((y - self.centery)**2)
-		return lhs <= rhs
 
 	def applyMagnification(self,mag_array):
 		"""
