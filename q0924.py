@@ -31,7 +31,7 @@ def loadDisk(headerFile, magMapFile,wavelengths,einsteinRadius,diskSize,annulus_
 	file.close()
 	disk = map_objects.Disk(diskSize[0],diskSize[1],pixel_size)
 	print("computing wavelengths in disk")
-	stepsize = diskSize[1]//200
+	stepsize = diskSize[1]//150
 	disk.computeWavelengths(wavelengths,smooth_step = stepsize if stepsize > 0 else 1,annulus_removed=annulus_removed)
 	print("applying magnification to wavelengths")
 	disk.applyMagnification(mag_array)
@@ -41,8 +41,6 @@ def loadDisk(headerFile, magMapFile,wavelengths,einsteinRadius,diskSize,annulus_
 def start(headerFiles,magMapFiles,red_shift,wavelengths,einsteinRadius,diskSize,annulus_removed):
 	reloadModules()
 	shifted_wavelengths = [w/(red_shift+1) for w in wavelengths]
-	if(annulus_removed != None):
-		annulus_removed = (annulus_removed[0]/(red_shift+1),annulus_removed[1])
 	disk1 = loadDisk(headerFiles[0],magMapFiles[0],shifted_wavelengths,einsteinRadius,diskSize,annulus_removed)
 	disk2 = loadDisk(headerFiles[1],magMapFiles[1],shifted_wavelengths,einsteinRadius,diskSize,annulus_removed)
 
@@ -72,6 +70,6 @@ def start(headerFiles,magMapFiles,red_shift,wavelengths,einsteinRadius,diskSize,
 
 headers = ("0924/Image_A/s90/mapmeta.dat","0924/Image_D/s90/mapmeta.dat")
 magFiles = ("0924/Image_A/s90/map.bin","0924/Image_D/s90/map.bin")
-diskSize = ([5000,5000],200)
-annulus_removed = None
+diskSize = ([7000,7000],600)
+annulus_removed = (100,"inner disk removed")
 start(headers,magFiles,q3[0],q3[1],q3[2],diskSize,annulus_removed)

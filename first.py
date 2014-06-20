@@ -102,15 +102,15 @@ def start(red_shift,wavelengths):
 	file.close()
 
 	#get objects
-	diska = map_objects.Disk([250,250],100,pixel_size)
+	diska = map_objects.Disk([250,250],200,pixel_size)
 	print("computing wavelengths in disk")
-	diska.computeWavelengths(wavelengths)
+	diska.computeWavelengths(wavelengths,annulus_removed=(100,.2))
 	print("applying magnification to wavelengths")
 	diska.applyMagnification(mag_arraya.array)
 
-	diskb = map_objects.Disk([250,250],100,pixel_size)
+	diskb = map_objects.Disk([250,250],200,pixel_size)
 	print("computing wavelengths in disk")
-	diskb.computeWavelengths(wavelengths)
+	diskb.computeWavelengths(wavelengths,annulus_removed=(100,.2))
 	print("applying magnification to wavelengths")
 	diskb.applyMagnification(mag_arrayb.array)
 

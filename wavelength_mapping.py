@@ -41,8 +41,11 @@ class WavelengthMapping:
 		self.radius_peak_meters = self.radius_peak*pixel_size
 		if annulus_removed != None:
 			annulus = (((A_CONSTANT*(annulus_removed[0]/1000000000))/B_CONSTANT)**(4/3))/pixel_size
-			width = annulus*annulus_removed[1]
-			self.width_removed = (annulus-(width/2),annulus+(width/2))
+			if annulus_removed[1] == "inner disk removed":
+				self.width_removed = (0,annulus)
+			else:
+				width = annulus*annulus_removed[1]
+				self.width_removed = (annulus-(width/2),annulus+(width/2))
 		else:
 			self.width_removed = None
 		#calculate the wavelength in nanometers
@@ -79,11 +82,6 @@ class WavelengthMapping:
 					self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery+y))
 					self.intensity_points.append(computeIntensityPoint(self.centerx+x,self.centery-y))
 					self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery-y))
-				elif(isInsideDisk):
-					self.intensity_points.append(Point(self.centerx+x,self.centery+y,0))
-					self.intensity_points.append(Point(self.centerx-x,self.centery+y,0))
-					self.intensity_points.append(Point(self.centerx+x,self.centery-y,0))
-					self.intensity_points.append(Point(self.centerx-x,self.centery-y,0))
 		for pt in self.intensity_points:
 			pt.value = pt.value / self.total_intensity
 
