@@ -22,6 +22,14 @@ class Header:
 		self.kappa_gamma = filerm.readline()[:-1]
 		filerm.close()
 
+class DiskDetails:
+	def __init__(self,red_shift,wavelengths,einsteinRadius,diskSize,annulus_removed):
+		self.red_shift = red_shift
+		self.wavelengths = wavelengths
+		self.einsteinRadius = einsteinRadius
+		self.diskSize = diskSize
+		self.annulus_removed = annulus_removed
+
 def reloadModules():
 	imp.reload(interpolater)
 	imp.reload(map_objects)
@@ -41,44 +49,45 @@ def loadDisk(header, magMapFile,wavelengths,einsteinRadius,diskCenter,diskSize,a
 	return disk
 
 #wavelengths are assumed to be in nanometers
-def start(saveDir, headers,magMapFiles,red_shift,wavelengths,einsteinRadius,diskSize,annulus_removed):
+def plot(axis, maplegend, headers,magMapFiles,diskDetails):
 	reloadModules()
-	shifted_wavelengths = [w/(red_shift+1) for w in wavelengths]
+	shifted_wavelengths = [w/(diskDetails.red_shift+1) for w in diskDetails.wavelengths]
 	disk1 = loadDisk(headers[0],magMapFiles[0],shifted_wavelengths,\
-		einsteinRadius,diskSize[0][0],diskSize[1],annulus_removed)
+		diskDetails.einsteinRadius,diskDetails.diskSize[0][0],diskDetails.diskSize[1],diskDetails.annulus_removed)
 	disk2 = loadDisk(headers[1],magMapFiles[1],shifted_wavelengths,\
-		einsteinRadius,diskSize[0][1],diskSize[1],annulus_removed)
+		diskDetails.einsteinRadius,diskDetails.diskSize[0][1],diskDetails.diskSize[1],diskDetails.annulus_removed)
 
 	print("generating plot")
-	# plot([w.wavelength for w in disk1.wavelengths],\
-	# 	[w.total_magnification for w in disk1.wavelengths],\
-	# 	'bo')
-
-	# plot([w.wavelength for w in disk2.wavelengths],\
-	# 	[w.total_magnification for w in disk2.wavelengths],\
-	# 	'ro')
 
 	mag_ratios = []
 	for i in range(len(disk1.wavelengths)):
 		mag_ratios.append(disk1.wavelengths[i].total_magnification/disk2.wavelengths[i].total_magnification)
-
-	plt.plot(wavelengths,mag_ratios,'go')
+	
+	if maplegend == None:
+		axis.plot(diskDetails.wavelengths,mag_ratios,'go-')
+	else:
+		axis.plot(diskDetails.wavelengths,mag_ratios,maplegend[0],label=maplegend[1])
 	#adding some text. the offsets are just for positioning
-	for i in range(len(wavelengths)):
-		plt.text(wavelengths[i],mag_ratios[i]," ({:.3f},{:.3f})".format(wavelengths[i],mag_ratios[i]),fontsize=10)
+	for i in range(len(diskDetails.wavelengths)):
+		axis.text(diskDetails.wavelengths[i],mag_ratios[i]," ({:.2f},{:.2f})".format(diskDetails.wavelengths[i],mag_ratios[i]),fontsize=10)
 
-	plt.savefig(saveDir)
+	axis.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 	disk1 = None
 	disk2 = None
 	mag_ratios = None
-	plt.close()
-	gc.collect()
 
+def start(headers,magFiles,diskDetails):
+	fig = plt.figure(figsize=(13,7))
+	ax = fig.add_axes([0.06, 0.05, 0.6, 0.9])
+	plot(ax,("ko-","no annulus removed"),headers,magFiles,diskDetails)
+	plt.show()
+	plt.close('all')
 # headers = (Header("0924/Image_A/s90/mapmeta.dat"),Header("0924/Image_D/s90/mapmeta.dat"))
 # magFiles = ("0924/Image_A/s90/map.bin","0924/Image_D/s90/map.bin")
-# disk = (((7000,7000),(7000,7000)),600)
-# annulus_removed = (100,"inner disk removed")
-# start("/home/josh/Desktop/meh2/moremeh",headers,magFiles,q3[0],q3[1],q3[2],disk,annulus_removed)
+# disk = (((7000,7000),(7000,7000)),100)
+# annulus_removed = None
+# diskDetails = DiskDetails(q3[0],q3[1],q3[2],disk,annulus_removed)
+# start(headers,magFiles,diskDetails)
 
 def automate(countMax):
 	#initialization stuff
@@ -91,6 +100,11 @@ def automate(countMax):
 		(200,.1),(200,.2),(200,"inner disk removed"),\
 		(400,.1),(400,.2),(400,"inner disk removed")\
 		)
+	maplegend = (("ko-","no annulus removed"),\
+		("go-","10% annulus removed at 100nm"),("gD--","20% annulus removed at 100nm"),("gs:","Inner disk removed from 100nm"),\
+		("ro-","10% annulus removed at 200nm"),("rD--","20% annulus removed at 200nm"),("rs:","Inner disk removed from 200nm"),\
+		("bo-","10% annulus removed at 400nm"),("bD--","20% annulus removed at 400nm"),("bs:","Inner disk removed from 400nm"),\
+		)
 	basedir = "/home/josh/Dropbox/MagWavelengthPlots/SDSSJ0924+0219/"
 
 	#automation code to generate the maps
@@ -102,21 +116,18 @@ def automate(countMax):
 		centerx2 = random.randint(gaussian_radius,headers[1].IMAGE_WIDTH-gaussian_radius)
 		centery2 = random.randint(gaussian_radius,headers[1].IMAGE_HEIGHT-gaussian_radius)
 		saveDir = basedir+"center1:"+str(centerx1)+","+str(centery1)+"&"\
-						+"center2:"+str(centerx2)+","+str(centery2)+"/"
-		os.makedirs(saveDir)
+						+"center2:"+str(centerx2)+","+str(centery2)
+		fig = plt.figure(figsize=(12,7))
+		ax = fig.add_axes([0.06, 0.05, 0.6, 0.9])
 		for i,annulus_removed in enumerate(annuli_removed):
 			print("generating map",i+1,"of",len(annuli_removed),"in folder",count+1)
-			if annulus_removed == None:
-				saveFile = saveDir+"NoAnnulusRemoved"
-			elif annulus_removed[1] == "inner disk removed":
-				saveFile = saveDir+str(annulus_removed[0])+"nmInnerDiskRemoved"
-			else:
-				saveFile = saveDir+str(annulus_removed[0])+"nm"+str(int(annulus_removed[1]*100))+"percent"
-			start(saveFile, headers, magFiles,\
-				quasar[0], quasar[1], quasar[2],\
-				(((centerx1,centery1),(centerx2,centery2)),600),\
-				annulus_removed
-				)
+			diskDetails = DiskDetails(quasar[0], quasar[1], quasar[2],\
+						(((centerx1,centery1),(centerx2,centery2)),600),\
+						annulus_removed)
+			plot(ax,maplegend[i],headers, magFiles,diskDetails)
+		plt.savefig(saveDir)
+		plt.close('all')
+		gc.collect()
 		count+=1
 
 automate(1)
