@@ -39,15 +39,7 @@ class WavelengthMapping:
 		self.centerx = disk.center[0]
 		self.centery = disk.center[1]
 		self.radius_peak_meters = self.radius_peak*pixel_size
-		if annulus_removed != None:
-			annulus = (((A_CONSTANT*(annulus_removed[0]/1000000000))/B_CONSTANT)**(4/3))/pixel_size
-			if annulus_removed[1] == "inner disk removed":
-				self.width_removed = (0,annulus)
-			else:
-				width = annulus*annulus_removed[1]
-				self.width_removed = (annulus-(width/2),annulus+(width/2))
-		else:
-			self.width_removed = None
+		self.setUpAnnulusStuff(annulus_removed,pixel_size)
 		#calculate the wavelength in nanometers
 		if(wavelength == -1):
 			self.wavelength = (BA_CONSTANT * (self.radius_peak_meters**(3/4)))*1000000000
@@ -55,18 +47,31 @@ class WavelengthMapping:
 			self.wavelength = wavelength
 		self.computeAndNormalizeIntensityPoints(smooth_step)
 
-	def calculateGaussian(self,x,y):
-		xcomponent = ((x-self.centerx)**2)/(2*self.radius_peak**2)
-		ycomponent = ((y-self.centery)**2)/(2*self.radius_peak**2)
-		multiplier = E_CONSTANT**(-(xcomponent+ycomponent))
-		return multiplier
+	def setUpAnnulusStuff(self, annulus_removed, pixel_size):
+		if annulus_removed != None:
+			annulus = (((A_CONSTANT*(annulus_removed[0]/1000000000))/B_CONSTANT)**(4/3))/pixel_size
+			if annulus_removed[1] == "inner disk removed":
+				self.width_removed = (0,annulus)
+			else:
+				width = annulus*annulus_removed[1]
+				self.width_removed = (annulus-(width/2),annulus+(width/2))
+			topBuildupMax = self.width_removed[1] + (self.width_removed[1] * .05)
+			topBuildup = (self.width_removed[1],topBuildupMax)
+			bottomBuildup = None
+			if self.width_removed[0] != 0:
+				bottomBuildupMax = self.width_removed[0] - (self.width_removed[0] * .05)
+				bottomBuildup = (bottomBuildupMax,self.width_removed[0])
+			self.annulus_buildup = (bottomBuildup,topBuildup)
+		else:
+			self.width_removed = None
+			self.annulus_buildup = None
 
 	#compute the intensity based on the gaussian.
 	def computeAndNormalizeIntensityPoints(self,smooth_step):
 		self.intensity_points = []
 		self.total_intensity = 0
-		def computeIntensityPoint(x,y):
-			g = self.calculateGaussian(x,y)
+		def computeIntensityPoint(x,y,multiplier):
+			g = self.calculateGaussian(x,y)*multiplier
 			ip = Point(x,y,g)
 			self.total_intensity = self.total_intensity + g
 			return ip
@@ -78,12 +83,27 @@ class WavelengthMapping:
 									(radius >= self.width_removed[0]) and \
 									(radius <= self.width_removed[1])
 				if(isInsideDisk and not inRemovedAnnulus):
-					self.intensity_points.append(computeIntensityPoint(self.centerx+x,self.centery+y))
-					self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery+y))
-					self.intensity_points.append(computeIntensityPoint(self.centerx+x,self.centery-y))
-					self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery-y))
+					intensity_multiplier = 1
+					if self.annulus_buildup != None:
+						if (self.annulus_buildup[0] != None) and \
+									(radius >= self.annulus_buildup[0][0]) and \
+									(radius <= self.annulus_buildup[0][1]):
+							intensity_multiplier = 2
+						elif (radius >= self.annulus_buildup[1][0]) and \
+									(radius <= self.annulus_buildup[1][1]):
+							intensity_multiplier = 2
+					self.intensity_points.append(computeIntensityPoint(self.centerx+x,self.centery+y,intensity_multiplier))
+					self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery+y,intensity_multiplier))
+					self.intensity_points.append(computeIntensityPoint(self.centerx+x,self.centery-y,intensity_multiplier))
+					self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery-y,intensity_multiplier))
 		for pt in self.intensity_points:
 			pt.value = pt.value / self.total_intensity
+
+	def calculateGaussian(self,x,y):
+		xcomponent = ((x-self.centerx)**2)/(2*self.radius_peak**2)
+		ycomponent = ((y-self.centery)**2)/(2*self.radius_peak**2)
+		multiplier = E_CONSTANT**(-(xcomponent+ycomponent))
+		return multiplier
 
 	def applyMagnification(self,mag_array):
 		"""

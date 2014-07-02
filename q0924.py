@@ -115,9 +115,11 @@ def automate(countMax):
 		centery1 = random.randint(gaussian_radius,headers[0].IMAGE_HEIGHT-gaussian_radius)
 		centerx2 = random.randint(gaussian_radius,headers[1].IMAGE_WIDTH-gaussian_radius)
 		centery2 = random.randint(gaussian_radius,headers[1].IMAGE_HEIGHT-gaussian_radius)
-		saveDir = basedir+"center1:"+str(centerx1)+","+str(centery1)+"&"\
-						+"center2:"+str(centerx2)+","+str(centery2)
-		fig = plt.figure(figsize=(12,7))
+		filename = "center1:"+str(centerx1)+","+str(centery1)+"&"\
+						+"center2:"+str(centerx2)+","+str(centery2)+"WithBuildup"
+		saveDir = basedir+filename
+		print(filename)
+		fig = plt.figure(figsize=(13,7))
 		ax = fig.add_axes([0.06, 0.05, 0.6, 0.9])
 		for i,annulus_removed in enumerate(annuli_removed):
 			print("generating map",i+1,"of",len(annuli_removed),"in folder",count+1)
@@ -130,4 +132,4 @@ def automate(countMax):
 		gc.collect()
 		count+=1
 
-automate(1)
+automate(10)
