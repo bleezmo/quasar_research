@@ -70,6 +70,7 @@ class WavelengthMapping:
 	def computeAndNormalizeIntensityPoints(self,smooth_step):
 		self.intensity_points = []
 		self.total_intensity = 0
+		
 		def computeIntensityPoint(x,y,multiplier):
 			g = self.calculateGaussian(x,y)*multiplier
 			ip = Point(x,y,g)
