@@ -32,9 +32,10 @@ def drawMagMap(headerFile,magMapFile):
 	colorMap = cm.gray
 	colorMap.set_over('white')
 	colorMap.set_under('black')
-	plt.imshow(magArray,origin="lower",interpolation="bilinear",norm=colors.Normalize(),cmap=colorMap)
+	plt.imshow(magArray,origin="lower",interpolation="bilinear",norm=colors.LogNorm(),cmap=colorMap)
 	plt.show()
 	magArray = None
+	plt.close()
 	gc.collect()
 
 drawMagMap("0924/Image_A/s90/mapmeta.dat","0924/Image_A/s90/map.bin")
