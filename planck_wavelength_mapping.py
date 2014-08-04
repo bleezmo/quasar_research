@@ -25,6 +25,8 @@ MDOT = (48*G_CONSTANT*MBH*PROTON_MASS*pi*EDDINGTON_RATIO)/(C_CONSTANT*SIGMAT)
 A_CONSTANT = ((G_CONSTANT*MBH*MDOT)/(8*pi*SB_CONSTANT))**.25
 #part of wavelength formula wavelength = (B_CONSTANT/A_CONSTANT)*r^(3/4)
 BA_CONSTANT = B_CONSTANT/A_CONSTANT
+#planck's constant
+H_CONSTANT = 6.626/(10**34)
 
 class WavelengthMapping:
 	def __init__(self,radius_peak,disk,pixel_size,wavelength = -1,annulus_removed = None,smooth_step = 1):
@@ -36,6 +38,7 @@ class WavelengthMapping:
 		"""
 		self.radius_peak = radius_peak
 		self.max_radius = disk.radius
+		self.pixel_size = pixel_size
 		self.centerx = disk.center[0]
 		self.centery = disk.center[1]
 		self.radius_peak_meters = self.radius_peak*pixel_size
@@ -49,18 +52,20 @@ class WavelengthMapping:
 
 	def setUpAnnulusStuff(self, annulus_removed, pixel_size):
 		if annulus_removed != None:
+			#compute size of annulus to be removed
 			annulus = (((A_CONSTANT*(annulus_removed[0]/1000000000))/B_CONSTANT)**(4/3))/pixel_size
 			if annulus_removed[1] == "inner disk removed":
 				self.width_removed = (0,annulus)
 			else:
 				width = annulus*annulus_removed[1]
 				self.width_removed = (annulus-(width/2),annulus+(width/2))
+			#simulate build up on edge of portion of annulus removed
 			topBuildupMax = self.width_removed[1] + (self.width_removed[1] * .05)
-			topBuildup = (self.width_removed[1],topBuildupMax)
+			topBuildup = (self.width_removed[1],topBuildupMax) #annulus of top buildup
 			bottomBuildup = None
 			if self.width_removed[0] != 0:
 				bottomBuildupMax = self.width_removed[0] - (self.width_removed[0] * .05)
-				bottomBuildup = (bottomBuildupMax,self.width_removed[0])
+				bottomBuildup = (bottomBuildupMax,self.width_removed[0]) #annulus of bottom buildup
 			self.annulus_buildup = (bottomBuildup,topBuildup)
 		else:
 			self.width_removed = None
@@ -100,11 +105,13 @@ class WavelengthMapping:
 		for pt in self.intensity_points:
 			pt.value = pt.value / self.total_intensity
 
-	def calculateGaussian(self,x,y):
-		xcomponent = ((x-self.centerx)**2)/(2*self.radius_peak**2)
-		ycomponent = ((y-self.centery)**2)/(2*self.radius_peak**2)
-		multiplier = E_CONSTANT**(-(xcomponent+ycomponent))
-		return multiplier
+	def calculatePlanck(self,x,y):
+		x_meters = x*self.pixel_size
+		y_meters = y*self.pixel_size
+		r = ((x_meters**2)+(y_meters**2))**.5 #radius in meters
+		T_r = A_CONSTANT/(r**.75) #temperature as a function of the radius
+		radiance = (2*)
+
 
 	def applyMagnification(self,mag_array):
 		"""

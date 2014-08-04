@@ -1,16 +1,5 @@
 from imp import reload
-import wavelength_mapping
 from generic_objects import Circle
-
-reload(wavelength_mapping)
-WavelengthMapping = wavelength_mapping.WavelengthMapping
-RadiusMapping = wavelength_mapping.RadiusMapping
-
-class MapObject:
-	def __init__(self,z):
-		self.z = z
-	def drawPoint(self,x,y,default):
-		return default
 
 class ImageMap(MapObject):
 	def __init__(self,width,height,z=0):
@@ -42,13 +31,13 @@ class Disk(MapObject):
 		self.radius = radius
 		self.pixel_size = pixel_size
 
-	def computeAllWavelengths(self,step=1,annulus_removed=None):
+	def computeAllWavelengths(self,WavelengthMapping,step=1,annulus_removed=None):
 		c = Circle([self.centerx,self.centery],self.radius)
 		self.wavelengths = []
 		for r in range(step,self.radius+step,step):
 			self.wavelengths.append(WavelengthMapping(r,c,self.pixel_size,annulus_removed = annulus_removed,smooth_step = step))
 
-	def computeWavelengths(self,wavelengths,smooth_step = 1,annulus_removed = None):
+	def computeWavelengths(self,RadiusMapping,wavelengths,smooth_step = 1,annulus_removed = None):
 		c = Circle([self.centerx,self.centery],self.radius)
 		self.wavelengths = []
 		for w in wavelengths:
