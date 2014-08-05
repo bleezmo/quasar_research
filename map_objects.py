@@ -1,6 +1,12 @@
 from imp import reload
 from generic_objects import Circle
 
+class MapObject:
+	def __init__(self,z):
+		self.z = z
+	def drawPoint(self,x,y,default):
+		return default
+
 class ImageMap(MapObject):
 	def __init__(self,width,height,z=0):
 		MapObject.__init__(self,z)

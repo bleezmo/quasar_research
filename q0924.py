@@ -31,6 +31,10 @@ class DiskDetails:
 
 def reloadModules():
 	imp.reload(map_objects)
+	import planck_wavelength_mapping
+	imp.reload(planck_wavelength_mapping)
+	global WavelengthMapping
+	WavelengthMapping = planck_wavelength_mapping.WavelengthMapping
 
 def loadDisk(header, magMapFile,wavelengths,einsteinRadius,diskCenter,diskSize,annulus_removed):
 	print("loading magnification map and header file")
@@ -41,8 +45,7 @@ def loadDisk(header, magMapFile,wavelengths,einsteinRadius,diskCenter,diskSize,a
 	disk = map_objects.Disk(diskCenter,diskSize,pixel_size)
 	print("computing wavelengths in disk")
 	stepsize = diskSize//300 #increase step size to compute disk in reasonable amount time
-	import gaussian_wavelength_mapping
-	disk.computeWavelengths(gaussian_wavelength_mapping.WavelengthMapping,\
+	disk.computeWavelengths(WavelengthMapping,\
 		wavelengths,smooth_step = stepsize if stepsize > 0 else 1,annulus_removed=annulus_removed)
 	print("applying magnification to wavelengths")
 	disk.applyMagnification(mag_array)
@@ -116,7 +119,7 @@ def automate(countMax):
 		centerx2 = random.randint(gaussian_radius,headers[1].IMAGE_WIDTH-gaussian_radius)
 		centery2 = random.randint(gaussian_radius,headers[1].IMAGE_HEIGHT-gaussian_radius)
 		filename = "center1:"+str(centerx1)+","+str(centery1)+"&"\
-						+"center2:"+str(centerx2)+","+str(centery2)+"WithBuildup"
+						+"center2:"+str(centerx2)+","+str(centery2)+"WithBuildupAndPlanck"
 		saveDir = basedir+filename
 		print(filename)
 		fig = plt.figure(figsize=(13,7))
@@ -132,4 +135,4 @@ def automate(countMax):
 		gc.collect()
 		count+=1
 
-automate(10)
+automate(1)

@@ -27,6 +27,8 @@ A_CONSTANT = ((G_CONSTANT*MBH*MDOT)/(8*pi*SB_CONSTANT))**.25
 BA_CONSTANT = B_CONSTANT/A_CONSTANT
 #planck's constant
 H_CONSTANT = 6.626/(10**34)
+#boltzmann constant
+Kb_CONSTANT = 1.381/(10**23)
 
 class WavelengthMapping:
 	def __init__(self,radius_peak,disk,pixel_size,wavelength = -1,annulus_removed = None,smooth_step = 1):
@@ -77,7 +79,7 @@ class WavelengthMapping:
 		self.total_intensity = 0
 		
 		def computeIntensityPoint(x,y,multiplier):
-			g = self.calculateGaussian(x,y)*multiplier
+			g = self.calculatePlanck(x,y)*multiplier
 			ip = Point(x,y,g)
 			self.total_intensity = self.total_intensity + g
 			return ip
@@ -102,16 +104,18 @@ class WavelengthMapping:
 					self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery+y,intensity_multiplier))
 					self.intensity_points.append(computeIntensityPoint(self.centerx+x,self.centery-y,intensity_multiplier))
 					self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery-y,intensity_multiplier))
-		for pt in self.intensity_points:
-			pt.value = pt.value / self.total_intensity
+		# for pt in self.intensity_points:
+		# 	pt.value = pt.value / self.total_intensity
 
 	def calculatePlanck(self,x,y):
-		x_meters = x*self.pixel_size
-		y_meters = y*self.pixel_size
+		x_meters = (x-self.centerx)*self.pixel_size
+		y_meters = (y-self.centery)*self.pixel_size
 		r = ((x_meters**2)+(y_meters**2))**.5 #radius in meters
 		T_r = A_CONSTANT/(r**.75) #temperature as a function of the radius
-		radiance = (2*)
-
+		w_m = self.wavelength/1000000000
+		radiance = ((2*H_CONSTANT*(C_CONSTANT**2))/(w_m**5))*\
+					(1/((E_CONSTANT**((H_CONSTANT*C_CONSTANT)/(w_m*Kb_CONSTANT*T_r)))-1))
+		return radiance
 
 	def applyMagnification(self,mag_array):
 		"""
