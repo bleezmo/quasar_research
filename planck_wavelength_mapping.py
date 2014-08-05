@@ -112,7 +112,7 @@ class WavelengthMapping:
 		y_meters = (y-self.centery)*self.pixel_size
 		r = ((x_meters**2)+(y_meters**2))**.5 #radius in meters
 		T_r = A_CONSTANT/(r**.75) #temperature as a function of the radius
-		w_m = self.wavelength/1000000000
+		w_m = self.wavelength/1000000000 #switch back to meter
 		radiance = ((2*H_CONSTANT*(C_CONSTANT**2))/(w_m**5))*\
 					(1/((E_CONSTANT**((H_CONSTANT*C_CONSTANT)/(w_m*Kb_CONSTANT*T_r)))-1))
 		return radiance

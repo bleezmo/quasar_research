@@ -1,6 +1,9 @@
 import imp
 import map_objects
 from quasar_data import *
+import planck_wavelength_mapping as wavelength_mapping
+
+
 
 import gc
 import numpy as np
@@ -9,6 +12,10 @@ import matplotlib.cm as cm
 import matplotlib.colors as colors
 import random
 import os
+
+def reloadModules():
+	imp.reload(map_objects)
+	imp.reload(wavelength_mapping)
 
 class Header:
 	def __init__(self,file):
@@ -29,13 +36,6 @@ class DiskDetails:
 		self.diskSize = diskSize
 		self.annulus_removed = annulus_removed
 
-def reloadModules():
-	imp.reload(map_objects)
-	import planck_wavelength_mapping
-	imp.reload(planck_wavelength_mapping)
-	global WavelengthMapping
-	WavelengthMapping = planck_wavelength_mapping.WavelengthMapping
-
 def loadDisk(header, magMapFile,wavelengths,einsteinRadius,diskCenter,diskSize,annulus_removed):
 	print("loading magnification map and header file")
 	file = open(magMapFile,"rb")
@@ -45,7 +45,7 @@ def loadDisk(header, magMapFile,wavelengths,einsteinRadius,diskCenter,diskSize,a
 	disk = map_objects.Disk(diskCenter,diskSize,pixel_size)
 	print("computing wavelengths in disk")
 	stepsize = diskSize//300 #increase step size to compute disk in reasonable amount time
-	disk.computeWavelengths(WavelengthMapping,\
+	disk.computeWavelengths(wavelength_mapping.RadiusMapping,\
 		wavelengths,smooth_step = stepsize if stepsize > 0 else 1,annulus_removed=annulus_removed)
 	print("applying magnification to wavelengths")
 	disk.applyMagnification(mag_array)
@@ -94,7 +94,7 @@ def start(headers,magFiles,diskDetails):
 
 def automate(countMax):
 	#initialization stuff
-	gaussian_radius = 600
+	max_radius = 600
 	headers = (Header("0924/Image_A/s90/mapmeta.dat"),Header("0924/Image_D/s90/mapmeta.dat"))
 	magFiles = ("0924/Image_A/s90/map.bin","0924/Image_D/s90/map.bin")
 	quasar = q3
@@ -114,10 +114,10 @@ def automate(countMax):
 	count = 0
 	while count < countMax:
 		print("generating maps",count+1,"of",countMax)
-		centerx1 = random.randint(gaussian_radius,headers[0].IMAGE_WIDTH-gaussian_radius)
-		centery1 = random.randint(gaussian_radius,headers[0].IMAGE_HEIGHT-gaussian_radius)
-		centerx2 = random.randint(gaussian_radius,headers[1].IMAGE_WIDTH-gaussian_radius)
-		centery2 = random.randint(gaussian_radius,headers[1].IMAGE_HEIGHT-gaussian_radius)
+		centerx1 = random.randint(max_radius,headers[0].IMAGE_WIDTH-max_radius)
+		centery1 = random.randint(max_radius,headers[0].IMAGE_HEIGHT-max_radius)
+		centerx2 = random.randint(max_radius,headers[1].IMAGE_WIDTH-max_radius)
+		centery2 = random.randint(max_radius,headers[1].IMAGE_HEIGHT-max_radius)
 		filename = "center1:"+str(centerx1)+","+str(centery1)+"&"\
 						+"center2:"+str(centerx2)+","+str(centery2)+"WithBuildupAndPlanck"
 		saveDir = basedir+filename
@@ -125,9 +125,9 @@ def automate(countMax):
 		fig = plt.figure(figsize=(13,7))
 		ax = fig.add_axes([0.06, 0.05, 0.6, 0.9])
 		for i,annulus_removed in enumerate(annuli_removed):
-			print("generating map",i+1,"of",len(annuli_removed),"in folder",count+1)
+			print("generating map",i+1,"of",len(annuli_removed))
 			diskDetails = DiskDetails(quasar.red_shift, quasar.wavelengths, quasar.einstein_radius,\
-						(((centerx1,centery1),(centerx2,centery2)),600),\
+						(((centerx1,centery1),(centerx2,centery2)),max_radius),\
 						annulus_removed)
 			plot(ax,maplegend[i],headers, magFiles,diskDetails)
 		plt.savefig(saveDir)
@@ -135,4 +135,4 @@ def automate(countMax):
 		gc.collect()
 		count+=1
 
-automate(1)
+automate(3)
