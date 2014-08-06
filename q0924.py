@@ -1,9 +1,7 @@
 import imp
 import map_objects
+import wavelength_mapping
 from quasar_data import *
-import planck_wavelength_mapping as wavelength_mapping
-
-
 
 import gc
 import numpy as np
@@ -36,7 +34,7 @@ class DiskDetails:
 		self.diskSize = diskSize
 		self.annulus_removed = annulus_removed
 
-def loadDisk(header, magMapFile,wavelengths,einsteinRadius,diskCenter,diskSize,annulus_removed):
+def loadDisk(usePlanck,header, magMapFile,wavelengths,einsteinRadius,diskCenter,diskSize,annulus_removed):
 	print("loading magnification map and header file")
 	file = open(magMapFile,"rb")
 	pixel_size = (header.quasar_size * einsteinRadius)/header.IMAGE_WIDTH
@@ -45,19 +43,25 @@ def loadDisk(header, magMapFile,wavelengths,einsteinRadius,diskCenter,diskSize,a
 	disk = map_objects.Disk(diskCenter,diskSize,pixel_size)
 	print("computing wavelengths in disk")
 	stepsize = diskSize//300 #increase step size to compute disk in reasonable amount time
-	disk.computeWavelengths(wavelength_mapping.RadiusMapping,\
+	wavelength_mapping_method = None
+	if(usePlanck):
+		wavelength_mapping_method = wavelength_mapping.PlanckRadiusMapping
+	else:
+		wavelength_mapping_method = wavelength_mapping.GaussianRadiusMapping
+	imp.reload(wavelength_mapping)
+	disk.computeWavelengths(wavelength_mapping_method,\
 		wavelengths,smooth_step = stepsize if stepsize > 0 else 1,annulus_removed=annulus_removed)
 	print("applying magnification to wavelengths")
 	disk.applyMagnification(mag_array)
 	return disk
 
 #wavelengths are assumed to be in nanometers
-def plot(axis, maplegend, headers,magMapFiles,diskDetails):
+def plot(axis, maplegend, headers,magMapFiles,diskDetails,usePlanck):
 	reloadModules()
 	shifted_wavelengths = [w/(diskDetails.red_shift+1) for w in diskDetails.wavelengths]
-	disk1 = loadDisk(headers[0],magMapFiles[0],shifted_wavelengths,\
+	disk1 = loadDisk(usePlanck,headers[0],magMapFiles[0],shifted_wavelengths,\
 		diskDetails.einsteinRadius,diskDetails.diskSize[0][0],diskDetails.diskSize[1],diskDetails.annulus_removed)
-	disk2 = loadDisk(headers[1],magMapFiles[1],shifted_wavelengths,\
+	disk2 = loadDisk(usePlanck,headers[1],magMapFiles[1],shifted_wavelengths,\
 		diskDetails.einsteinRadius,diskDetails.diskSize[0][1],diskDetails.diskSize[1],diskDetails.annulus_removed)
 
 	print("generating plot")
@@ -92,6 +96,26 @@ def start(headers,magFiles,diskDetails):
 # diskDetails = DiskDetails(q3[0],q3[1],q3[2],disk,annulus_removed)
 # start(headers,magFiles,diskDetails)
 
+def initPlot(seed,usePlanck,max_radius,headers,magFiles,quasar,annuli_removed,maplegend,basedir,centerx1,centery1,centerx2,centery2):
+	filename = str(seed)
+	if(usePlanck):
+		filename = filename+"Planck"
+	else:
+		filename = filename+"Gaussian"
+	saveDir = basedir+filename
+	print(filename)
+	fig = plt.figure(figsize=(13,7))
+	ax = fig.add_axes([0.06, 0.05, 0.6, 0.9])
+	for i,annulus_removed in enumerate(annuli_removed):
+		print("generating map",i+1,"of",len(annuli_removed))
+		diskDetails = DiskDetails(quasar.red_shift, quasar.wavelengths, quasar.einstein_radius,\
+					(((centerx1,centery1),(centerx2,centery2)),max_radius),\
+					annulus_removed)
+		plot(ax,maplegend[i],headers, magFiles,diskDetails,usePlanck)
+	plt.savefig(saveDir)
+	plt.close('all')
+	gc.collect()
+
 def automate(countMax):
 	#initialization stuff
 	max_radius = 600
@@ -108,7 +132,7 @@ def automate(countMax):
 		("ro-","10% annulus removed at 200nm"),("rD--","20% annulus removed at 200nm"),("rs:","Inner disk removed from 200nm"),\
 		("bo-","10% annulus removed at 400nm"),("bD--","20% annulus removed at 400nm"),("bs:","Inner disk removed from 400nm"),\
 		)
-	basedir = "/home/josh/Dropbox/MagWavelengthPlots/SDSSJ0924+0219/"
+	basedir = "/home/josh/Dropbox/MagWavelengthPlots/SDSSJ0924+0219/planck_vs_gaussian/"
 
 	#automation code to generate the maps
 	count = 0
@@ -118,21 +142,10 @@ def automate(countMax):
 		centery1 = random.randint(max_radius,headers[0].IMAGE_HEIGHT-max_radius)
 		centerx2 = random.randint(max_radius,headers[1].IMAGE_WIDTH-max_radius)
 		centery2 = random.randint(max_radius,headers[1].IMAGE_HEIGHT-max_radius)
-		filename = "center1:"+str(centerx1)+","+str(centery1)+"&"\
-						+"center2:"+str(centerx2)+","+str(centery2)+"WithBuildupAndPlanck"
-		saveDir = basedir+filename
-		print(filename)
-		fig = plt.figure(figsize=(13,7))
-		ax = fig.add_axes([0.06, 0.05, 0.6, 0.9])
-		for i,annulus_removed in enumerate(annuli_removed):
-			print("generating map",i+1,"of",len(annuli_removed))
-			diskDetails = DiskDetails(quasar.red_shift, quasar.wavelengths, quasar.einstein_radius,\
-						(((centerx1,centery1),(centerx2,centery2)),max_radius),\
-						annulus_removed)
-			plot(ax,maplegend[i],headers, magFiles,diskDetails)
-		plt.savefig(saveDir)
-		plt.close('all')
-		gc.collect()
+		seed = random.randint(0,1000000)
+		initPlot(seed,True,max_radius,headers,magFiles,quasar,annuli_removed,maplegend,basedir,centerx1,centery1,centerx2,centery2)
+		initPlot(seed,False,max_radius,headers,magFiles,quasar,annuli_removed,maplegend,basedir,centerx1,centery1,centerx2,centery2)
+
 		count+=1
 
-automate(3)
+automate(4)

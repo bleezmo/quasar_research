@@ -19,8 +19,10 @@ SIGMAT = 6.65/(10**29)
 G_CONSTANT = 6.67/(10**11)
 #stefan-boltzmann constant
 SB_CONSTANT = 5.67/(10**8)
+#innermost stable circular orbit
+ISCO = (6*G_CONSTANT*MBH)/(C_CONSTANT**2)
 #mass accretion rate through an annulus of disk
-MDOT = (48*G_CONSTANT*MBH*PROTON_MASS*pi*EDDINGTON_RATIO)/(C_CONSTANT*SIGMAT)
+MDOT = (8*C_CONSTANT*PROTON_MASS*pi*EDDINGTON_RATIO*ISCO)/SIGMAT
 #part of temperature profile of accretion disk T(r)=A*r^(-3/4)
 A_CONSTANT = ((G_CONSTANT*MBH*MDOT)/(8*pi*SB_CONSTANT))**.25
 #part of wavelength formula wavelength = (B_CONSTANT/A_CONSTANT)*r^(3/4)
@@ -83,9 +85,12 @@ class WavelengthMapping:
 			ip = Point(x,y,g)
 			self.total_intensity = self.total_intensity + g
 			return ip
-		for x in range(smooth_step,self.max_radius+smooth_step,smooth_step):
-			for y in range(smooth_step,self.max_radius+smooth_step,smooth_step):
+		for x in range(0,self.max_radius,smooth_step):
+			for y in range(0,self.max_radius,smooth_step):
 				radius = ((x**2)+(y**2))**.5
+				#check to make sure we don't have a radius smaller then the isco
+				if((radius*self.pixel_size) < ISCO):
+					continue
 				isInsideDisk = radius <= self.max_radius
 				inRemovedAnnulus = (self.width_removed != None) and \
 									(radius >= self.width_removed[0]) and \
@@ -112,7 +117,7 @@ class WavelengthMapping:
 		y_meters = (y-self.centery)*self.pixel_size
 		r = ((x_meters**2)+(y_meters**2))**.5 #radius in meters
 		T_r = A_CONSTANT/(r**.75) #temperature as a function of the radius
-		w_m = self.wavelength/1000000000 #switch back to meter
+		w_m = self.wavelength/1000000000 #switch back to meters from nanometers
 		radiance = ((2*H_CONSTANT*(C_CONSTANT**2))/(w_m**5))*\
 					(1/((E_CONSTANT**((H_CONSTANT*C_CONSTANT)/(w_m*Kb_CONSTANT*T_r)))-1))
 		return radiance

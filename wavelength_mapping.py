@@ -19,12 +19,18 @@ SIGMAT = 6.65/(10**29)
 G_CONSTANT = 6.67/(10**11)
 #stefan-boltzmann constant
 SB_CONSTANT = 5.67/(10**8)
+#innermost stable circular orbit
+ISCO = (6*G_CONSTANT*MBH)/(C_CONSTANT**2)
 #mass accretion rate through an annulus of disk
-MDOT = (48*G_CONSTANT*MBH*PROTON_MASS*pi*EDDINGTON_RATIO)/(C_CONSTANT*SIGMAT)
+MDOT = (8*C_CONSTANT*PROTON_MASS*pi*EDDINGTON_RATIO*ISCO)/SIGMAT
 #part of temperature profile of accretion disk T(r)=A*r^(-3/4)
 A_CONSTANT = ((G_CONSTANT*MBH*MDOT)/(8*pi*SB_CONSTANT))**.25
 #part of wavelength formula wavelength = (B_CONSTANT/A_CONSTANT)*r^(3/4)
 BA_CONSTANT = B_CONSTANT/A_CONSTANT
+#planck's constant
+H_CONSTANT = 6.626/(10**34)
+#boltzmann constant
+Kb_CONSTANT = 1.381/(10**23)
 
 class WavelengthMapping:
 	def __init__(self,radius_peak,disk,pixel_size,wavelength = -1,annulus_removed = None,smooth_step = 1):
@@ -36,6 +42,7 @@ class WavelengthMapping:
 		"""
 		self.radius_peak = radius_peak
 		self.max_radius = disk.radius
+		self.pixel_size = pixel_size
 		self.centerx = disk.center[0]
 		self.centery = disk.center[1]
 		self.radius_peak_meters = self.radius_peak*pixel_size
@@ -45,7 +52,7 @@ class WavelengthMapping:
 			self.wavelength = (BA_CONSTANT * (self.radius_peak_meters**(3/4)))*1000000000
 		else:
 			self.wavelength = wavelength
-		self.computeAndNormalizeIntensityPoints(smooth_step)
+		self.computeIntensityPoints(smooth_step)
 
 	def setUpAnnulusStuff(self, annulus_removed, pixel_size):
 		if annulus_removed != None:
@@ -68,18 +75,16 @@ class WavelengthMapping:
 			self.annulus_buildup = None
 
 	#compute the intensity based on the gaussian.
-	def computeAndNormalizeIntensityPoints(self,smooth_step):
+	def computeIntensityPoints(self,smooth_step):
 		self.intensity_points = []
 		self.total_intensity = 0
 		
-		def computeIntensityPoint(x,y,multiplier):
-			g = self.calculateGaussian(x,y)*multiplier
-			ip = Point(x,y,g)
-			self.total_intensity = self.total_intensity + g
-			return ip
-		for x in range(smooth_step,self.max_radius+smooth_step,smooth_step):
-			for y in range(smooth_step,self.max_radius+smooth_step,smooth_step):
+		for x in range(0,self.max_radius,smooth_step):
+			for y in range(0,self.max_radius,smooth_step):
 				radius = ((x**2)+(y**2))**.5
+				#check to make sure we don't have a radius smaller then the isco
+				if((radius*self.pixel_size) < ISCO):
+					continue
 				isInsideDisk = radius <= self.max_radius
 				inRemovedAnnulus = (self.width_removed != None) and \
 									(radius >= self.width_removed[0]) and \
@@ -94,18 +99,16 @@ class WavelengthMapping:
 						elif (radius >= self.annulus_buildup[1][0]) and \
 									(radius <= self.annulus_buildup[1][1]):
 							intensity_multiplier = 2
-					self.intensity_points.append(computeIntensityPoint(self.centerx+x,self.centery+y,intensity_multiplier))
-					self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery+y,intensity_multiplier))
-					self.intensity_points.append(computeIntensityPoint(self.centerx+x,self.centery-y,intensity_multiplier))
-					self.intensity_points.append(computeIntensityPoint(self.centerx-x,self.centery-y,intensity_multiplier))
-		for pt in self.intensity_points:
-			pt.value = pt.value / self.total_intensity
+					self.intensity_points.append(self.computeIntensityPoint(self.centerx+x,self.centery+y,intensity_multiplier))
+					self.intensity_points.append(self.computeIntensityPoint(self.centerx-x,self.centery+y,intensity_multiplier))
+					self.intensity_points.append(self.computeIntensityPoint(self.centerx+x,self.centery-y,intensity_multiplier))
+					self.intensity_points.append(self.computeIntensityPoint(self.centerx-x,self.centery-y,intensity_multiplier))
 
-	def calculateGaussian(self,x,y):
-		xcomponent = ((x-self.centerx)**2)/(2*self.radius_peak**2)
-		ycomponent = ((y-self.centery)**2)/(2*self.radius_peak**2)
-		multiplier = E_CONSTANT**(-(xcomponent+ycomponent))
-		return multiplier
+	def computeIntensityPoint(self,x,y,multiplier):
+		"""
+			to be overridden by gaussian or planck implementation
+		"""
+		pass
 
 	def applyMagnification(self,mag_array):
 		"""
@@ -118,12 +121,56 @@ class WavelengthMapping:
 			self.mag_points.append(mag_point)
 			self.total_magnification = self.total_magnification + mag_point.value
 
-class RadiusMapping(WavelengthMapping):
+class PlanckWavelengthMapping(WavelengthMapping):
+
+	def computeIntensityPoint(self,x,y,multiplier):
+		g = self.calculatePlanck(x,y)*multiplier
+		ip = Point(x,y,g)
+		self.total_intensity = self.total_intensity + g
+		return ip
+
+	def calculatePlanck(self,x,y):
+		x_meters = (x-self.centerx)*self.pixel_size
+		y_meters = (y-self.centery)*self.pixel_size
+		r = ((x_meters**2)+(y_meters**2))**.5 #radius in meters
+		T_r = A_CONSTANT/(r**.75) #temperature as a function of the radius
+		w_m = self.wavelength/1000000000 #switch back to meters from nanometers
+		radiance = ((2*H_CONSTANT*(C_CONSTANT**2))/(w_m**5))*\
+					(1/((E_CONSTANT**((H_CONSTANT*C_CONSTANT)/(w_m*Kb_CONSTANT*T_r)))-1))
+		return radiance
+
+class GaussianWavelengthMapping(WavelengthMapping):
+	#compute the intensity based on the gaussian.
+	def computeIntensityPoints(self,smooth_step):
+		WavelengthMapping.computeIntensityPoints(self,smooth_step)
+		#normalize the computed intensity points
+		for pt in self.intensity_points:
+			pt.value = pt.value / self.total_intensity
+
+	def computeIntensityPoint(self,x,y,multiplier):
+		g = self.calculateGaussian(x,y)*multiplier
+		ip = Point(x,y,g)
+		self.total_intensity = self.total_intensity + g
+		return ip
+
+	def calculateGaussian(self,x,y):
+		xcomponent = ((x-self.centerx)**2)/(2*self.radius_peak**2)
+		ycomponent = ((y-self.centery)**2)/(2*self.radius_peak**2)
+		multiplier = E_CONSTANT**(-(xcomponent+ycomponent))
+		return multiplier
+
+class PlanckRadiusMapping(PlanckWavelengthMapping):
 	"""
 	here we assume that the given wavelength is given in nanometers
 	"""
 	def __init__(self,wavelength,disk,pixel_size,smooth_step = 1,annulus_removed = None):
 		radius_peak = (((A_CONSTANT*(wavelength/1000000000))/B_CONSTANT)**(4/3))/pixel_size
-		WavelengthMapping.__init__(self,radius_peak,disk,pixel_size,wavelength,smooth_step = smooth_step,annulus_removed = annulus_removed)
+		PlanckWavelengthMapping.__init__(self,radius_peak,disk,pixel_size,wavelength,smooth_step = smooth_step,annulus_removed = annulus_removed)
 
-
+class GaussianRadiusMapping(GaussianWavelengthMapping):
+	"""
+	here we assume that the given wavelength is given in nanometers
+	"""
+	def __init__(self,wavelength,disk,pixel_size,smooth_step = 1,annulus_removed = None):
+		radius_peak = (((A_CONSTANT*(wavelength/1000000000))/B_CONSTANT)**(4/3))/pixel_size
+		GaussianWavelengthMapping.__init__(self,radius_peak,disk,pixel_size,wavelength,smooth_step = smooth_step,annulus_removed = annulus_removed)
