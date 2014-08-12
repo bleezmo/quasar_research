@@ -1,7 +1,7 @@
 import imp
 import map_objects
 from quasar_data import *
-import planck_wavelength_mapping as wavelength_mapping
+import wavelength_mapping
 
 
 
@@ -45,7 +45,7 @@ def loadDisk(header, magMapFile,wavelengths,einsteinRadius,diskCenter,diskSize,a
 	disk = map_objects.Disk(diskCenter,diskSize,pixel_size)
 	print("computing wavelengths in disk")
 	stepsize = diskSize//300 #increase step size to compute disk in reasonable amount time
-	disk.computeWavelengths(wavelength_mapping.RadiusMapping,\
+	disk.computeWavelengths(wavelength_mapping.PlanckRadiusMapping,\
 		wavelengths,smooth_step = stepsize if stepsize > 0 else 1,annulus_removed=annulus_removed)
 	print("applying magnification to wavelengths")
 	disk.applyMagnification(mag_array)
