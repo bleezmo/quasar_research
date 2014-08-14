@@ -70,7 +70,7 @@ def applyCustomSobelAndPrint(dims,magArray):
 			if sobelArray[x-1][y-1] < .0003:
 				sobelArray[x-1][y-1] = 0.
 				vectorArr[x-1][y-1] = 0.
-			else:
+			else: 
 				Gx = (sobelArray[x-1][y-1]+(2*sobelArray[x][y-1])+sobelArray[x+1][y-1])-\
 						(sobelArray[x-1][y+1]+(2*sobelArray[x][y+1])+sobelArray[x+1][y+1])
 				Gy = (sobelArray[x+1][y-1]+(2*sobelArray[x+1][y])+sobelArray[x+1][y+1])-\
