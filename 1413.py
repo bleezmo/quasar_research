@@ -9,9 +9,9 @@ import random
 def automate(countMax):
 	#initialization stuff
 	max_radius = 600
-	headers = (Header("0924/Image_A/s90/mapmeta.dat"),Header("0924/Image_D/s90/mapmeta.dat"))
-	magFiles = ("0924/Image_A/s90/map.bin","0924/Image_D/s90/map.bin")
-	quasar = q3
+	headers = (Header("1413/Image_A/s90/mapmeta.dat"),Header("1413/Image_D/s90/mapmeta.dat"))
+	magFiles = ("1413/Image_A/s90/map.bin","1413/Image_D/s90/map.bin")
+	quasar = 
 	annuli_removed = (None,\
 		(100,.1),(100,.2),(100,"inner disk removed"),\
 		(200,.1),(200,.2),(200,"inner disk removed"),\
@@ -49,4 +49,4 @@ def automate(countMax):
 		gc.collect()
 		count+=1
 
-automate(3)
+automate(1)
