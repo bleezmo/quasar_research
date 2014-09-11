@@ -34,13 +34,18 @@ def loadDisk(header, magMapFile,wavelengths,einsteinRadius,diskCenter,diskSize,a
 	print("loading magnification map and header file")
 	file = open(magMapFile,"rb")
 	pixel_size = (header.quasar_size * einsteinRadius)/header.IMAGE_WIDTH
+	print(pixel_size)
 	mag_array = np.fromfile(file,np.dtype("i4")).reshape(header.IMAGE_WIDTH,header.IMAGE_HEIGHT)
 	file.close()
 	disk = map_objects.Disk(diskCenter,diskSize,pixel_size)
 	print("computing wavelengths in disk")
-	stepsize = diskSize//300 #increase step size to compute disk in reasonable amount time
-	disk.computeWavelengths(wavelength_mapping.PlanckRadiusMapping,\
-		wavelengths,smooth_step = stepsize if stepsize > 0 else 1,annulus_removed=annulus_removed)
+	stepsize = diskSize//100 #increase step size to compute disk in reasonable amount time
+	if wavelengths == None:
+		disk.computeAllWavelengths(wavelength_mapping.GaussianWavelengthMapping,\
+			step = stepsize if stepsize > 0 else 1,annulus_removed=annulus_removed)
+	else:
+		disk.computeWavelengths(wavelength_mapping.PlanckRadiusMapping,\
+			wavelengths,smooth_step = stepsize if stepsize > 0 else 1,annulus_removed=annulus_removed)
 	print("applying magnification to wavelengths")
 	disk.applyMagnification(mag_array)
 	return disk
@@ -48,7 +53,10 @@ def loadDisk(header, magMapFile,wavelengths,einsteinRadius,diskCenter,diskSize,a
 #wavelengths are assumed to be in nanometers
 def plot(axis, maplegend, headers,magMapFiles,diskDetails):
 	reloadModules()
-	shifted_wavelengths = [w/(diskDetails.red_shift+1) for w in diskDetails.wavelengths]
+	if(diskDetails.wavelengths == None):
+		shifted_wavelengths = None
+	else:
+		shifted_wavelengths = [w/(diskDetails.red_shift+1) for w in diskDetails.wavelengths]
 	disk1 = loadDisk(headers[0],magMapFiles[0],shifted_wavelengths,\
 		diskDetails.einsteinRadius,diskDetails.diskSize[0][0],diskDetails.diskSize[1],diskDetails.annulus_removed)
 	disk2 = loadDisk(headers[1],magMapFiles[1],shifted_wavelengths,\

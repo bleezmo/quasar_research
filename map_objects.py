@@ -40,7 +40,7 @@ class Disk(MapObject):
 	def computeAllWavelengths(self,WavelengthMapping,step=1,annulus_removed=None):
 		c = Circle([self.centerx,self.centery],self.radius)
 		self.wavelengths = []
-		for r in range(step,self.radius+step,step):
+		for r in range(1,self.radius+step,step):
 			self.wavelengths.append(WavelengthMapping(r,c,self.pixel_size,annulus_removed = annulus_removed,smooth_step = step))
 
 	def computeWavelengths(self,RadiusMapping,wavelengths,smooth_step = 1,annulus_removed = None):
