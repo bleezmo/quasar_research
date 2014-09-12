@@ -78,12 +78,14 @@ class WavelengthMapping:
 	def computeIntensityPoints(self,smooth_step):
 		self.intensity_points = []
 		self.total_intensity = 0
-		
+		ISCO_pixels = ISCO / self.pixel_size
+		if(self.radius_peak < ISCO_pixels):
+			return
 		for x in range(0,self.max_radius,smooth_step):
 			for y in range(0,self.max_radius,smooth_step):
 				radius = ((x**2)+(y**2))**.5
 				#check to make sure we don't have a radius smaller then the isco
-				if((radius*self.pixel_size) < ISCO):
+				if(radius < ISCO_pixels):
 					continue
 				isInsideDisk = radius <= self.max_radius
 				inRemovedAnnulus = (self.width_removed != None) and \
@@ -103,7 +105,7 @@ class WavelengthMapping:
 					self.intensity_points.append(self.computeIntensityPoint(self.centerx-x,self.centery+y,intensity_multiplier))
 					self.intensity_points.append(self.computeIntensityPoint(self.centerx+x,self.centery-y,intensity_multiplier))
 					self.intensity_points.append(self.computeIntensityPoint(self.centerx-x,self.centery-y,intensity_multiplier))
-
+	
 	def computeIntensityPoint(self,x,y,multiplier):
 		"""
 			to be overridden by gaussian or planck implementation

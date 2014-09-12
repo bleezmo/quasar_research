@@ -50,8 +50,16 @@ class Disk(MapObject):
 			self.wavelengths.append(RadiusMapping(w,c,self.pixel_size,smooth_step = smooth_step, annulus_removed = annulus_removed))
 
 	def applyMagnification(self,mag_array):
+		tempArray = []
 		for w in self.wavelengths:
 			w.applyMagnification(mag_array)
+			# if there are empty wavelengths (no computed magnification) then remove from list
+			# this can happen if the radius peak chosen is within ISCO
+			if(w.total_magnification != 0):
+				tempArray.append(w)
+		self.wavelengths = tempArray
+
+
 
 	def drawPoint(self,x,y,default):
 		rhs = self.radius * self.radius

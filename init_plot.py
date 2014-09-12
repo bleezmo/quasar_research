@@ -34,7 +34,6 @@ def loadDisk(header, magMapFile,wavelengths,einsteinRadius,diskCenter,diskSize,a
 	print("loading magnification map and header file")
 	file = open(magMapFile,"rb")
 	pixel_size = (header.quasar_size * einsteinRadius)/header.IMAGE_WIDTH
-	print(pixel_size)
 	mag_array = np.fromfile(file,np.dtype("i4")).reshape(header.IMAGE_WIDTH,header.IMAGE_HEIGHT)
 	file.close()
 	disk = map_objects.Disk(diskCenter,diskSize,pixel_size)
@@ -50,8 +49,7 @@ def loadDisk(header, magMapFile,wavelengths,einsteinRadius,diskCenter,diskSize,a
 	disk.applyMagnification(mag_array)
 	return disk
 
-#wavelengths are assumed to be in nanometers
-def plot(axis, maplegend, headers,magMapFiles,diskDetails):
+def loadDisks(headers,magMapFiles,diskDetails):
 	reloadModules()
 	if(diskDetails.wavelengths == None):
 		shifted_wavelengths = None
@@ -61,7 +59,33 @@ def plot(axis, maplegend, headers,magMapFiles,diskDetails):
 		diskDetails.einsteinRadius,diskDetails.diskSize[0][0],diskDetails.diskSize[1],diskDetails.annulus_removed)
 	disk2 = loadDisk(headers[1],magMapFiles[1],shifted_wavelengths,\
 		diskDetails.einsteinRadius,diskDetails.diskSize[0][1],diskDetails.diskSize[1],diskDetails.annulus_removed)
+	return (disk1,disk2)
 
+def plotRadii(axis,maplegend,headers,magMapFiles,diskDetails):
+	(disk1,disk2) = loadDisks(headers,magMapFiles,diskDetails)
+	print("generating plot")
+
+	# mag_ratios = []
+	# for i in range(len(disk1.wavelengths)):
+	# 	mag_ratios.append(disk1.wavelengths[i].total_magnification/disk2.wavelengths[i].total_magnification)
+		#adding some text
+		# axis.text(disk1.wavelengths[i].radius_peak,mag_ratios[i]," ({:.2f},{:.2f})".format(disk1.wavelengths[i].radius_peak,mag_ratios[i]),fontsize=10)
+	mag_ratios = [disk1.wavelengths[i].total_magnification/disk2.wavelengths[i].total_magnification for i in range(disk1.wavelengths)]
+	radii = [w.radius_peak_meters for w in disk1.wavelengths]
+	if maplegend == None:
+		axis.plot([w.radius_peak_meters for w in disk1.wavelengths],mag_ratios,'go-')
+	else:
+		axis.plot([w.radius_peak_meters for w in disk1.wavelengths],mag_ratios,maplegend[0],label=maplegend[1])
+
+	axis.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+	disk1 = None
+	disk2 = None
+	mag_ratios = None
+	return (radii,mag_ratios)
+
+#wavelengths are assumed to be in nanometers
+def plotWavelengths(axis, maplegend, headers,magMapFiles,diskDetails):
+	(disk1,disk2) = loadDisks(headers,magMapFiles,diskDetails)
 	print("generating plot")
 
 	mag_ratios = []
